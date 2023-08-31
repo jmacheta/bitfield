@@ -1,6 +1,12 @@
-#include "typed_test.hpp"
+#include <ecpp/bitmask.hpp>
+#include <gtest/gtest.h>
 
-#include <ecpp/bitfield.hpp>
+
+using BitmaskTypes = ::testing::Types<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t>;
+
+
+template<typename T> class ECPP_Bitmask : public testing::Test {};
+
 
 TYPED_TEST_SUITE(ECPP_Bitmask, BitmaskTypes);
 
@@ -9,17 +15,17 @@ using namespace ecpp;
 template<typename T> static void construct_and_check(T value, unsigned expectedWidth, unsigned expectedShift, unsigned expectedOffset, T expectedBaseValue, bool shouldBeContinuous) {
     bitmask<T> m(value);
     EXPECT_EQ(m.value, value);
-    EXPECT_EQ(m.width, expectedWidth) << "Invalid width for value " << std::hex << value;
-    EXPECT_EQ(m.shift, expectedShift) << "Invalid shift for value " << std::hex << value;
-    EXPECT_EQ(m.offset, expectedOffset) << "Invalid offset for value " << std::hex << value;
-    EXPECT_EQ(m.base_value, expectedBaseValue) << "Invalid base_value for value " << std::hex << value;
-    EXPECT_EQ(m.is_continuous, shouldBeContinuous) << "not expected continuity for value " << std::hex << value;
+    EXPECT_EQ(m.width(), expectedWidth) << "Invalid width for value " << std::hex << value;
+    EXPECT_EQ(m.trailing_zeros(), expectedShift) << "Invalid trailing zeros for value " << std::hex << value;
+    EXPECT_EQ(m.leading_zeros(), expectedOffset) << "Invalid leading zeros for value " << std::hex << value;
+    EXPECT_EQ(m.base_value(), expectedBaseValue) << "Invalid base for value " << std::hex << value;
+    EXPECT_EQ((m.popcount() == m.width()), shouldBeContinuous) << " " << std::hex << value;
 }
 
 
 TYPED_TEST(ECPP_Bitmask, ConstructionAndTraits) {
     constexpr static unsigned maxBitmaskBits = std::numeric_limits<unsigned char>::digits * sizeof(TypeParam);
-    construct_and_check<TypeParam>(0, 0, maxBitmaskBits, maxBitmaskBits, 0, true);
+    construct_and_check<TypeParam>(0, 0, maxBitmaskBits, 0, 0, true);
 
     // Check every continuous bitmask, i.e. 0b1, 0b11, 0b111, ...
     TypeParam mask = 0;
@@ -43,29 +49,90 @@ TYPED_TEST(ECPP_Bitmask, ConstructionAndTraits) {
 
 
 TYPED_TEST(ECPP_Bitmask, Operators) {
-    bitmask<TypeParam> a1(0b11110000U);
-    bitmask<TypeParam> a2(0b00001111U);
+    auto max_v  = std::numeric_limits<TypeParam>::max();
+    auto zero_v = std::numeric_limits<TypeParam>::min();
+    auto high_v = static_cast<TypeParam>(max_v >> (std::numeric_limits<TypeParam>::digits / 2));
+    auto low_v  = static_cast<TypeParam>(max_v ^ high_v);
 
-    EXPECT_EQ((a1 | a2).value, 0b11111111U);
-    EXPECT_EQ((a1 ^ a2).value, 0b11111111U);
-    EXPECT_EQ((a1 & a2).value, 0b00000000U);
+    bitmask zero{zero_v};
+    bitmask max{max_v};
+    bitmask high{high_v};
+    bitmask low{low_v};
+    {
+        EXPECT_EQ((zero | zero).value, zero_v);
+        EXPECT_EQ((zero | low).value, low_v);
+        EXPECT_EQ((zero | high).value, high_v);
+        EXPECT_EQ((zero | max).value, max_v);
 
-    bitmask<TypeParam> b1(0b11111000U);
-    bitmask<TypeParam> b2(0b00001111U);
-    EXPECT_EQ((b1 | b2).value, 0b11111111);
-    EXPECT_EQ((b1 ^ b2).value, 0b11110111);
-    EXPECT_EQ((b1 & b2).value, 0b00001000);
+        EXPECT_EQ((low | zero).value, low_v);
+        EXPECT_EQ((low | low).value, low_v);
+        EXPECT_EQ((low | high).value, max_v);
+        EXPECT_EQ((low | max).value, max_v);
 
-    bitmask<TypeParam> n1(0U);
-    EXPECT_EQ((~n1).value, TypeParam(-1));
-    bitmask<TypeParam> n2(1U);
-    EXPECT_EQ((~n2).value, TypeParam(-2));
+        EXPECT_EQ((high | zero).value, high_v);
+        EXPECT_EQ((high | low).value, max_v);
+        EXPECT_EQ((high | high).value, high_v);
+        EXPECT_EQ((high | max).value, max_v);
+
+        EXPECT_EQ((max | zero).value, max_v);
+        EXPECT_EQ((max | low).value, max_v);
+        EXPECT_EQ((max | high).value, max_v);
+        EXPECT_EQ((max | max).value, max_v);
+    }
+    {
+        EXPECT_EQ((zero ^ zero).value, zero_v);
+        EXPECT_EQ((zero ^ low).value, low_v);
+        EXPECT_EQ((zero ^ high).value, high_v);
+        EXPECT_EQ((zero ^ max).value, max_v);
+
+        EXPECT_EQ((low ^ zero).value, low_v);
+        EXPECT_EQ((low ^ low).value, zero_v);
+        EXPECT_EQ((low ^ high).value, max_v);
+        EXPECT_EQ((low ^ max).value, high_v);
+
+        EXPECT_EQ((high ^ zero).value, high_v);
+        EXPECT_EQ((high ^ low).value, max_v);
+        EXPECT_EQ((high ^ high).value, zero_v);
+        EXPECT_EQ((high ^ max).value, low_v);
+
+        EXPECT_EQ((max ^ zero).value, max_v);
+        EXPECT_EQ((max ^ low).value, high_v);
+        EXPECT_EQ((max ^ high).value, low_v);
+        EXPECT_EQ((max ^ max).value, zero_v);
+    }
+    {
+        EXPECT_EQ((zero & zero).value, zero_v);
+        EXPECT_EQ((zero & low).value, zero_v);
+        EXPECT_EQ((zero & high).value, zero_v);
+        EXPECT_EQ((zero & max).value, zero_v);
+
+        EXPECT_EQ((low & zero).value, zero_v);
+        EXPECT_EQ((low & low).value, low_v);
+        EXPECT_EQ((low & high).value, zero_v);
+        EXPECT_EQ((low & max).value, low_v);
+
+        EXPECT_EQ((high & zero).value, zero_v);
+        EXPECT_EQ((high & low).value, zero_v);
+        EXPECT_EQ((high & high).value, high_v);
+        EXPECT_EQ((high & max).value, high_v);
+
+        EXPECT_EQ((max & zero).value, zero_v);
+        EXPECT_EQ((max & low).value, low_v);
+        EXPECT_EQ((max & high).value, high_v);
+        EXPECT_EQ((max & max).value, max_v);
+    }
+    {
+        EXPECT_EQ((~zero).value, max_v);
+        EXPECT_EQ((~low).value, high_v);
+        EXPECT_EQ((~high).value, low_v);
+        EXPECT_EQ((~max).value, zero_v);
+    }
 }
 
 
 TEST(ECPP_Bitmask, OperatorsOnDifferentTypes) {
-    bitmask<std::uint8_t>  a1(0b0011110000U);
-    bitmask<std::uint16_t> a2(0b1000001111U);
+    bitmask<std::uint8_t>  a1{0b0011110000U};
+    bitmask<std::uint16_t> a2{0b1000001111U};
 
     static_assert(std::is_same_v<decltype(a1 | a2), decltype(a2)>);
     static_assert(std::is_same_v<decltype(a1 ^ a2), decltype(a2)>);
