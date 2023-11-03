@@ -16,7 +16,6 @@ enum eU64 : std::uint64_t { EU64_0, EU64_1, EU64_MAX = UINT64_MAX };
 enum eS64 : std::int64_t { ES64_0 = -1, ES64_1, ES64_MAX = INT64_MAX };
 
 
-using BitmaskTypes = ::testing::Types<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t, unsigned char, unsigned short, unsigned, unsigned long, unsigned long long>;
 
 using BitfieldTypes = ::testing::Types<std::uint8_t,
                                        std::uint16_t,
@@ -66,7 +65,6 @@ template<typename T> class ECPP_Bitfield : public testing::Test {};
 
 template<typename T> class ECPP_BitfieldProxy : public testing::Test {};
 
-template<typename T> class ECPP_Bitmask : public testing::Test {};
 
 
 #endif

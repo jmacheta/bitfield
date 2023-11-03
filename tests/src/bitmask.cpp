@@ -14,7 +14,7 @@ using namespace ecpp;
 
 template<typename T> static void construct_and_check(T value, unsigned expectedWidth, unsigned expectedShift, unsigned expectedOffset, T expectedBaseValue, bool shouldBeContinuous) {
     bitmask<T> m(value);
-    EXPECT_EQ(m.value, value);
+    EXPECT_EQ(m.value(), value);
     EXPECT_EQ(m.width(), expectedWidth) << "Invalid width for value " << std::hex << value;
     EXPECT_EQ(m.trailing_zeros(), expectedShift) << "Invalid trailing zeros for value " << std::hex << value;
     EXPECT_EQ(m.leading_zeros(), expectedOffset) << "Invalid leading zeros for value " << std::hex << value;
@@ -59,73 +59,73 @@ TYPED_TEST(ECPP_Bitmask, Operators) {
     bitmask high{high_v};
     bitmask low{low_v};
     {
-        EXPECT_EQ((zero | zero).value, zero_v);
-        EXPECT_EQ((zero | low).value, low_v);
-        EXPECT_EQ((zero | high).value, high_v);
-        EXPECT_EQ((zero | max).value, max_v);
+        EXPECT_EQ((zero | zero), zero_v);
+        EXPECT_EQ((zero | low), low_v);
+        EXPECT_EQ((zero | high), high_v);
+        EXPECT_EQ((zero | max), max_v);
 
-        EXPECT_EQ((low | zero).value, low_v);
-        EXPECT_EQ((low | low).value, low_v);
-        EXPECT_EQ((low | high).value, max_v);
-        EXPECT_EQ((low | max).value, max_v);
+        EXPECT_EQ((low | zero), low_v);
+        EXPECT_EQ((low | low), low_v);
+        EXPECT_EQ((low | high), max_v);
+        EXPECT_EQ((low | max), max_v);
 
-        EXPECT_EQ((high | zero).value, high_v);
-        EXPECT_EQ((high | low).value, max_v);
-        EXPECT_EQ((high | high).value, high_v);
-        EXPECT_EQ((high | max).value, max_v);
+        EXPECT_EQ((high | zero), high_v);
+        EXPECT_EQ((high | low), max_v);
+        EXPECT_EQ((high | high), high_v);
+        EXPECT_EQ((high | max), max_v);
 
-        EXPECT_EQ((max | zero).value, max_v);
-        EXPECT_EQ((max | low).value, max_v);
-        EXPECT_EQ((max | high).value, max_v);
-        EXPECT_EQ((max | max).value, max_v);
+        EXPECT_EQ((max | zero), max_v);
+        EXPECT_EQ((max | low), max_v);
+        EXPECT_EQ((max | high), max_v);
+        EXPECT_EQ((max | max), max_v);
     }
     {
-        EXPECT_EQ((zero ^ zero).value, zero_v);
-        EXPECT_EQ((zero ^ low).value, low_v);
-        EXPECT_EQ((zero ^ high).value, high_v);
-        EXPECT_EQ((zero ^ max).value, max_v);
+        EXPECT_EQ((zero ^ zero), zero_v);
+        EXPECT_EQ((zero ^ low), low_v);
+        EXPECT_EQ((zero ^ high), high_v);
+        EXPECT_EQ((zero ^ max), max_v);
 
-        EXPECT_EQ((low ^ zero).value, low_v);
-        EXPECT_EQ((low ^ low).value, zero_v);
-        EXPECT_EQ((low ^ high).value, max_v);
-        EXPECT_EQ((low ^ max).value, high_v);
+        EXPECT_EQ((low ^ zero), low_v);
+        EXPECT_EQ((low ^ low), zero_v);
+        EXPECT_EQ((low ^ high), max_v);
+        EXPECT_EQ((low ^ max), high_v);
 
-        EXPECT_EQ((high ^ zero).value, high_v);
-        EXPECT_EQ((high ^ low).value, max_v);
-        EXPECT_EQ((high ^ high).value, zero_v);
-        EXPECT_EQ((high ^ max).value, low_v);
+        EXPECT_EQ((high ^ zero), high_v);
+        EXPECT_EQ((high ^ low), max_v);
+        EXPECT_EQ((high ^ high), zero_v);
+        EXPECT_EQ((high ^ max), low_v);
 
-        EXPECT_EQ((max ^ zero).value, max_v);
-        EXPECT_EQ((max ^ low).value, high_v);
-        EXPECT_EQ((max ^ high).value, low_v);
-        EXPECT_EQ((max ^ max).value, zero_v);
+        EXPECT_EQ((max ^ zero), max_v);
+        EXPECT_EQ((max ^ low), high_v);
+        EXPECT_EQ((max ^ high), low_v);
+        EXPECT_EQ((max ^ max), zero_v);
     }
     {
-        EXPECT_EQ((zero & zero).value, zero_v);
-        EXPECT_EQ((zero & low).value, zero_v);
-        EXPECT_EQ((zero & high).value, zero_v);
-        EXPECT_EQ((zero & max).value, zero_v);
+        EXPECT_EQ((zero & zero), zero_v);
+        EXPECT_EQ((zero & low), zero_v);
+        EXPECT_EQ((zero & high), zero_v);
+        EXPECT_EQ((zero & max), zero_v);
 
-        EXPECT_EQ((low & zero).value, zero_v);
-        EXPECT_EQ((low & low).value, low_v);
-        EXPECT_EQ((low & high).value, zero_v);
-        EXPECT_EQ((low & max).value, low_v);
+        EXPECT_EQ((low & zero), zero_v);
+        EXPECT_EQ((low & low), low_v);
+        EXPECT_EQ((low & high), zero_v);
+        EXPECT_EQ((low & max), low_v);
 
-        EXPECT_EQ((high & zero).value, zero_v);
-        EXPECT_EQ((high & low).value, zero_v);
-        EXPECT_EQ((high & high).value, high_v);
-        EXPECT_EQ((high & max).value, high_v);
+        EXPECT_EQ((high & zero), zero_v);
+        EXPECT_EQ((high & low), zero_v);
+        EXPECT_EQ((high & high), high_v);
+        EXPECT_EQ((high & max), high_v);
 
-        EXPECT_EQ((max & zero).value, zero_v);
-        EXPECT_EQ((max & low).value, low_v);
-        EXPECT_EQ((max & high).value, high_v);
-        EXPECT_EQ((max & max).value, max_v);
+        EXPECT_EQ((max & zero), zero_v);
+        EXPECT_EQ((max & low), low_v);
+        EXPECT_EQ((max & high), high_v);
+        EXPECT_EQ((max & max), max_v);
     }
     {
-        EXPECT_EQ((~zero).value, max_v);
-        EXPECT_EQ((~low).value, high_v);
-        EXPECT_EQ((~high).value, low_v);
-        EXPECT_EQ((~max).value, zero_v);
+        EXPECT_EQ((~zero), max_v);
+        EXPECT_EQ((~low), high_v);
+        EXPECT_EQ((~high), low_v);
+        EXPECT_EQ((~max), zero_v);
     }
 }
 
@@ -138,9 +138,9 @@ TEST(ECPP_Bitmask, OperatorsOnDifferentTypes) {
     static_assert(std::is_same_v<decltype(a1 ^ a2), decltype(a2)>);
     static_assert(std::is_same_v<decltype(a1 & a2), decltype(a2)>);
 
-    EXPECT_EQ((a1 | a2).value, 0b1011111111);
-    EXPECT_EQ((a1 ^ a2).value, 0b1011111111);
-    EXPECT_EQ((a1 & a2).value, 0b0000000000);
+    EXPECT_EQ((a1 | a2), 0b1011111111);
+    EXPECT_EQ((a1 ^ a2), 0b1011111111);
+    EXPECT_EQ((a1 & a2), 0b0000000000);
 
     bitmask<std::uint16_t> b1(0x000FFF0U);
     bitmask<std::uint32_t> b2(0xF0FF00FU);
@@ -149,7 +149,7 @@ TEST(ECPP_Bitmask, OperatorsOnDifferentTypes) {
     static_assert(std::is_same_v<decltype(b1 ^ b2), decltype(b2)>);
     static_assert(std::is_same_v<decltype(b1 & b2), decltype(b2)>);
 
-    EXPECT_EQ((b1 | b2).value, 0xF0FFFFFU);
-    EXPECT_EQ((b1 ^ b2).value, 0xF0F0FFFU);
-    EXPECT_EQ((b1 & b2).value, 0x000F000U);
+    EXPECT_EQ((b1 | b2), 0xF0FFFFFU);
+    EXPECT_EQ((b1 ^ b2), 0xF0F0FFFU);
+    EXPECT_EQ((b1 & b2), 0x000F000U);
 }
