@@ -112,7 +112,7 @@ namespace ecpp {
     }
 
 
-    // CTAD for aggregates and converting constructor
+    // CTAD
     template<std::signed_integral T> bitmask(T) -> bitmask<std::make_unsigned_t<T>>;
     template<std::unsigned_integral T> bitmask(T) -> bitmask<T>;
 
