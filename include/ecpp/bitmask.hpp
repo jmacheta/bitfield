@@ -132,5 +132,16 @@ namespace ecpp {
     template<std::signed_integral T> bitmask(T) -> bitmask<std::make_unsigned_t<T>>;
     template<std::unsigned_integral T> bitmask(T) -> bitmask<T>;
 
+
+    /**
+     * Concept true, when the T is a specialization of bitmask type
+     */
+    template<typename T>
+    concept is_bitmask = requires {
+        typename T::value_type;
+        requires std::same_as<std::remove_cv_t<T>, bitmask<typename T::value_type>>;
+    };
+
+
 } // namespace ecpp
 #endif
