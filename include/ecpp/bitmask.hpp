@@ -12,10 +12,6 @@
 
 namespace ecpp {
 
-    namespace bf_impl {
-        /// @brief Equals T when sizeof(T) >= sizeof(U) or U otherwise
-        template<typename U, typename V> using larger_of_t = typename std::conditional_t<sizeof(V) < sizeof(U), U, V>;
-    } // namespace bf_impl
 
     /// @brief Stores bitmask value and its properties
     template<std::unsigned_integral T> struct bitmask {
@@ -79,7 +75,9 @@ namespace ecpp {
             return static_cast<value_type>(m_value >> trailing_zeros());
         }
 
-        [[nodiscard]] constexpr operator value_type() const noexcept {return m_value;}
+        [[nodiscard]] constexpr operator value_type() const noexcept {
+            return m_value;
+        }
 
 
         [[nodiscard]] constexpr auto operator~() const noexcept {
@@ -93,6 +91,12 @@ namespace ecpp {
       private:
         value_type m_value; ///< Actual value of bitmask
     };
+
+
+    namespace bf_impl {
+        /// @brief Equals T when sizeof(T) >= sizeof(U) or U otherwise
+        template<typename U, typename V> using larger_of_t = typename std::conditional_t<sizeof(V) < sizeof(U), U, V>;
+    } // namespace bf_impl
 
 
     // Bitwise operators with bitmasks
@@ -111,6 +115,18 @@ namespace ecpp {
         return bitmask<decltype(new_value)>(new_value);
     }
 
+
+    /**
+     * @brief Checks if bitmask is contiguous, i.e. there are no 0 bits between 1 bits
+     * @param a bitmask to check
+     * @return true if bitmask is contiguous, false otherwise
+     */
+    template<typename T> [[nodiscard]] constexpr bool is_contiguous(bitmask<T> const& a) noexcept {
+        if (std::cmp_equal(a.value(), 0U)) [[unlikely]] {
+            return false;
+        }
+        return a.width() == a.popcount();
+    }
 
     // CTAD
     template<std::signed_integral T> bitmask(T) -> bitmask<std::make_unsigned_t<T>>;
