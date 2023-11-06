@@ -153,3 +153,15 @@ TEST(ECPP_Bitmask, OperatorsOnDifferentTypes) {
     EXPECT_EQ((b1 ^ b2), 0xF0F0FFFU);
     EXPECT_EQ((b1 & b2), 0x000F000U);
 }
+
+
+TEST(ECPP_Bitmask, is_contiguous) {
+    EXPECT_FALSE(is_contiguous(bitmask(0)));
+    EXPECT_FALSE(is_contiguous(bitmask(0b101)));
+    EXPECT_FALSE(is_contiguous(bitmask(0b111110011)));
+
+    EXPECT_TRUE(is_contiguous(bitmask(1)));
+    EXPECT_TRUE(is_contiguous(bitmask(0b11)));
+    EXPECT_TRUE(is_contiguous(bitmask(-1)));
+    EXPECT_TRUE(is_contiguous(bitmask(0xFFFFFFFF)));
+}

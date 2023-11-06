@@ -2,7 +2,6 @@
 
 #ifndef ECPP_BITMASK_HPP_
 #define ECPP_BITMASK_HPP_
-#pragma once
 
 #include <bit>
 #include <concepts>
