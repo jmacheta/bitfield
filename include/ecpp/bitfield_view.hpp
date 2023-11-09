@@ -210,5 +210,53 @@ namespace ecpp {
     template<is_bitfield_spec FieldSpec> constexpr auto as_writable_bitfield(auto& s) noexcept {
         return bitfield_view<std::remove_reference_t<decltype(s)>, FieldSpec>(s);
     }
+
+
+    namespace bf_impl {
+        template<typename F, typename... Fields>
+        concept one_of = std::disjunction_v<std::is_same<F, Fields>...>;
+
+        template<std::uintmax_t... Masks>
+        concept non_overlaping = ((... & Masks) == 0);
+    } // namespace bf_impl
+
+
+    template<std::unsigned_integral Storage, is_bitfield_spec... Fields>
+        requires(bf_impl::non_overlaping<Fields::mask ...>)
+    class bitfield_set_view {
+      public:
+        using field_types  = std::tuple<Fields...>;
+        using storage_type = Storage;
+
+        constexpr static bitmask<std::remove_cv_t<storage_type>> mask{static_cast<storage_type>((... | Fields::mask))};
+
+        constexpr bitfield_set_view(Storage& data) noexcept : m_data{data} {};
+
+        template<typename F>
+            requires(bf_impl::one_of<F, Fields...>)
+        [[nodiscard]] constexpr auto get() noexcept {
+            return as_writable_bitfield<F>(m_data);
+        }
+
+        template<typename F>
+            requires(bf_impl::one_of<F, Fields...>)
+        [[nodiscard]] constexpr auto get() const noexcept {
+            return as_bitfield<F>(m_data);
+        }
+
+      protected:
+        Storage& m_data;
+    };
+
+
+    template<is_bitfield_spec... Fields> constexpr auto as_bitfield_set(auto const& s) noexcept {
+        return bitfield_set_view<std::remove_reference_t<decltype(s)>, Fields...>(s);
+    }
+
+    template<is_bitfield_spec... Fields> constexpr auto as_writable_bitfield_set(auto& s) noexcept {
+        return bitfield_set_view<std::remove_reference_t<decltype(s)>, Fields...>(s);
+    }
+
+
 } // namespace ecpp
 #endif

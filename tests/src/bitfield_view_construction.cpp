@@ -1,16 +1,8 @@
 
-#include "typed_test.hpp"
 
-#include <ecpp/bitfield.hpp>
-
-#include <algorithm>
-#include <functional>
-#include <limits>
-#include <random>
+#include <ecpp/bitfield_view.hpp>
+#include <gtest/gtest.h>
 #include <type_traits>
-#include <vector>
-
-TYPED_TEST_SUITE(ECPP_Bitfield, BitfieldTypes);
 
 using namespace ecpp;
 

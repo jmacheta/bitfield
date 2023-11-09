@@ -1,43 +1,39 @@
 #ifndef ECPP_BITFIELD_SET_HPP_
 #define ECPP_BITFIELD_SET_HPP_
 
-#include <ecpp/bitfield.hpp>
+#include <ecpp/bitfield_view.hpp>
 namespace ecpp {
+
     namespace bf_impl {
-        template<typename F, typename... Fields>
-        concept one_of = std::disjunction_v<std::is_same<F, Fields>...>;
-    }
-    template<std::unsigned_integral Storage, is_bitfield_spec... Fields> class bitfield_set_view {
-      public:
-        using field_types  = std::tuple<Fields...>;
-        using storage_type = Storage;
+        template<std::size_t Width> struct internal_storage_type;
 
-        constexpr bitfield_set_view(Storage& data) noexcept : m_data{data} {};
+        template<std::size_t Width>
+            requires(Width <= 8)
+        struct internal_storage_type<Width> : std::type_identity<std::uint8_t> {};
 
-        template<typename F>
-            requires(bf_impl::one_of<F, Fields...>)
-        [[nodiscard]] constexpr auto get() noexcept {
-            return as_writable_bitfield<F>(m_data);
-        }
+        template<std::size_t Width>
+            requires(Width > 8 && Width <= 16)
+        struct internal_storage_type<Width> : std::type_identity<std::uint16_t> {};
 
-        template<typename F>
-            requires(bf_impl::one_of<F, Fields...>)
-        [[nodiscard]] constexpr auto get() const noexcept {
-            return as_bitfield<F>(m_data);
+        template<std::size_t Width>
+            requires(Width > 16 && Width <= 32)
+        struct internal_storage_type<Width> : std::type_identity<std::uint32_t> {};
+
+
+        template<std::size_t Width>
+            requires(Width > 32 && Width <= 64)
+        struct internal_storage_type<Width> : std::type_identity<std::uint64_t> {};
+
+    } // namespace bf_impl
+
+    template<is_bitfield_spec... Fields> class bitfield_set : public bitfield_set_view<bf_impl::internal_storage_type<11>, Fields...> {
+        using storage_type = bf_impl::internal_storage_type<11>;
+        constexpr bitfield_set() noexcept : bitfield_set_view<storage_type, Fields...>(m_storage) {
         }
 
       protected:
-        Storage& m_data;
+        storage_type m_storage;
     };
-
-
-    template<is_bitfield_spec... Fields> constexpr auto as_bitfield_set(auto const& s) noexcept {
-        return bitfield_set_view<std::remove_reference_t<decltype(s)>, Fields...>(s);
-    }
-
-    template<is_bitfield_spec... Fields> constexpr auto as_writable_bitfield_set(auto& s) noexcept {
-        return bitfield_set_view<std::remove_reference_t<decltype(s)>, Fields...>(s);
-    }
 
 
 } // namespace ecpp
