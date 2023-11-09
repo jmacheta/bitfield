@@ -130,7 +130,7 @@ TYPED_TEST(ECPP_Bitmask, Operators) {
 }
 
 
-TEST(ECPP_Bitmask, OperatorsOnDifferentTypes) {
+TEST(Bitmask, OperatorsOnDifferentTypes) {
     bitmask<std::uint8_t>  a1{0b0011110000U};
     bitmask<std::uint16_t> a2{0b1000001111U};
 
@@ -154,8 +154,18 @@ TEST(ECPP_Bitmask, OperatorsOnDifferentTypes) {
     EXPECT_EQ((b1 & b2), 0x000F000U);
 }
 
+TEST(Bitmask, type_deduction_guide) {
+    auto from_signed   = bitmask(0b10101010);
+    auto from_unsigned = bitmask(0b10101010U);
+    static_assert(std::is_same_v<decltype(from_signed), decltype(from_unsigned)>);
 
-TEST(ECPP_Bitmask, is_contiguous) {
+    auto from_int8  = bitmask(std::int8_t(0b10101010));
+    auto from_uint8 = bitmask(std::uint8_t(0b10101010));
+    static_assert(std::is_same_v<decltype(from_int8), decltype(from_uint8)>);
+}
+
+
+TEST(Bitmask, is_contiguous) {
     EXPECT_FALSE(is_contiguous(bitmask(0)));
     EXPECT_FALSE(is_contiguous(bitmask(0b101)));
     EXPECT_FALSE(is_contiguous(bitmask(0b111110011)));

@@ -61,7 +61,7 @@ namespace ecpp {
     template<typename T>
     concept is_bitfield_spec = bitfield_compatible_type<typename T::value_type> && is_bitmask<decltype(T::mask)>;
 
-    template<is_bitfield_spec Spec, std::unsigned_integral StorageType>
+    template<std::unsigned_integral StorageType, is_bitfield_spec Spec>
         requires(fits_in<Spec::mask, StorageType>)
     class bitfield_view {
       protected:
@@ -196,19 +196,19 @@ namespace ecpp {
 
 
     template<bitfield_compatible_type FieldType, std::unsigned_integral auto Mask> constexpr auto as_bitfield(auto const& s) noexcept {
-        return bitfield_view<bitfield_spec<FieldType, Mask>, std::remove_reference_t<decltype(s)>>(s);
+        return bitfield_view<std::remove_reference_t<decltype(s)>, bitfield_spec<FieldType, Mask>>(s);
     }
 
     template<is_bitfield_spec FieldSpec> constexpr auto as_bitfield(auto const& s) noexcept {
-        return bitfield_view<FieldSpec, std::remove_reference_t<decltype(s)>>(s);
+        return bitfield_view<std::remove_reference_t<decltype(s)>, FieldSpec>(s);
     }
 
     template<bitfield_compatible_type FieldType, std::unsigned_integral auto Mask> constexpr auto as_writable_bitfield(auto& s) noexcept {
-        return bitfield_view<bitfield_spec<FieldType, Mask>, std::remove_reference_t<decltype(s)>>(s);
+        return bitfield_view<std::remove_reference_t<decltype(s)>, bitfield_spec<FieldType, Mask>>(s);
     }
 
     template<is_bitfield_spec FieldSpec> constexpr auto as_writable_bitfield(auto& s) noexcept {
-        return bitfield_view<FieldSpec, std::remove_reference_t<decltype(s)>>(s);
+        return bitfield_view<std::remove_reference_t<decltype(s)>, FieldSpec>(s);
     }
 } // namespace ecpp
 #endif

@@ -3,55 +3,42 @@
 
 #include <ecpp/bitfield.hpp>
 namespace ecpp {
+    namespace bf_impl {
+        template<typename F, typename... Fields>
+        concept one_of = std::disjunction_v<std::is_same<F, Fields>...>;
+    }
+    template<std::unsigned_integral Storage, is_bitfield_spec... Fields> class bitfield_set_view {
+      public:
+        using field_types  = std::tuple<Fields...>;
+        using storage_type = Storage;
 
-    // template<has_bitfield_spec... FieldSpec> constexpr auto as_bitfield_set(auto
-    // const& s) noexcept {
-    //     return bitfield_set_view<std::remove_reference_t<decltype(s)>,
-    //     FieldSpec...>(s);
-    // }
+        constexpr bitfield_set_view(Storage& data) noexcept : m_data{data} {};
 
-    // template<has_bitfield_spec... FieldSpec> constexpr auto
-    // as_writable_bitfield_set(auto& s) noexcept {
-    //     return bitfield_set_view<std::remove_reference_t<decltype(s)>,
-    //     FieldSpec...>(s);
-    // }
+        template<typename F>
+            requires(bf_impl::one_of<F, Fields...>)
+        [[nodiscard]] constexpr auto get() noexcept {
+            return as_writable_bitfield<F>(m_data);
+        }
 
-    // template<std::size_t RequiredWidth> class minimal_storage_type;
-    // template<std::size_t RequiredWidth> using minimal_storage_type_t = typename
-    // minimal_storage_type<RequiredWidth>::type;
+        template<typename F>
+            requires(bf_impl::one_of<F, Fields...>)
+        [[nodiscard]] constexpr auto get() const noexcept {
+            return as_bitfield<F>(m_data);
+        }
 
-    // template<std::size_t RequiredWidth>
-    //     requires((RequiredWidth > 0U) && (RequiredWidth <= 8U))
-    // class minimal_storage_type<RequiredWidth> : public
-    // std::type_identity<std::uint8_t> {}; template<std::size_t RequiredWidth>
-    //     requires((RequiredWidth > 8U) && (RequiredWidth <= 16U))
-    // class minimal_storage_type<RequiredWidth> : public
-    // std::type_identity<std::uint16_t> {}; template<std::size_t RequiredWidth>
-    //     requires((RequiredWidth > 16U) && (RequiredWidth <= 32U))
-    // class minimal_storage_type<RequiredWidth> : public
-    // std::type_identity<std::uint32_t> {}; template<std::size_t RequiredWidth>
-    //     requires((RequiredWidth > 32U) && (RequiredWidth <= 64U))
-    // class minimal_storage_type<RequiredWidth> : public
-    // std::type_identity<std::uint32_t> {};
+      protected:
+        Storage& m_data;
+    };
 
-    // template<has_bitfield_spec FieldSpec, std::unsigned_integral StorageType =
-    // minimal_storage_type_t<bitmask(FieldSpec::mask).width>> class bitfield :
-    // public bitfield_view<FieldSpec, StorageType> {
-    //     StorageType data;
 
-    //   public:
-    //     using typename bitfield_view<FieldSpec, StorageType>::value_type;
-    //     using typename bitfield_view<FieldSpec, StorageType>::underlying_type;
+    template<is_bitfield_spec... Fields> constexpr auto as_bitfield_set(auto const& s) noexcept {
+        return bitfield_set_view<std::remove_reference_t<decltype(s)>, Fields...>(s);
+    }
 
-    //     using bitfield_view<FieldSpec, StorageType>::operator=;
+    template<is_bitfield_spec... Fields> constexpr auto as_writable_bitfield_set(auto& s) noexcept {
+        return bitfield_set_view<std::remove_reference_t<decltype(s)>, Fields...>(s);
+    }
 
-    //     constexpr bitfield() : bitfield_view<FieldSpec, StorageType>(data) {
-    //     }
-    //     constexpr bitfield(value_type initial_value) : bitfield_view<FieldSpec,
-    //     StorageType>(data) {
-    //         *this = initial_value;
-    //     }
-    // };
 
 } // namespace ecpp
 
