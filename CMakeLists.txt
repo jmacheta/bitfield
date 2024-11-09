@@ -1,24 +1,21 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.25)
 
 project(ecpp_bitfield LANGUAGES CXX VERSION 0.9.0)
-set(CMAKE_CXX_STANDARD 20)
-set(CXX_STANDARD_REQUIRED ON)
+
+option(ECPP_BITFIELD_TESTS "Build unit tests" ${PROJECT_IS_TOP_LEVEL})
+option(ECPP_BITFIELD_EXAMPLES "Build examples" ${PROJECT_IS_TOP_LEVEL})
 
 add_library(ecpp_bitfield INTERFACE)
-
 add_library(ecpp::bitfield ALIAS ecpp_bitfield)
 
+target_compile_features(ecpp_bitfield INTERFACE cxx_std_20)
 target_include_directories(ecpp_bitfield INTERFACE include)
 
-option(ECPP_BITFIELD_BUILD_TESTS "Build unit tests" OFF)
-option(ECPP_BITFIELD_BUILD_EXAMPLES "Build examples" OFF)
-
-if (PROJECT_IS_TOP_LEVEL OR ECPP_BITFIELD_BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(tests)
+if (ECPP_BITFIELD_TESTS)
+  include(CTest)
+  add_subdirectory(tests EXCLUDE_FROM_ALL)
 endif ()
 
-if (PROJECT_IS_TOP_LEVEL OR ECPP_BITFIELD_BUILD_EXAMPLES)
-  enable_testing()
-  add_subdirectory(examples)
+if (ECPP_BITFIELD_EXAMPLES)
+  add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif ()
