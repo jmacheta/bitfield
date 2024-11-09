@@ -3,13 +3,12 @@
 
 #include <bit>
 #include <concepts>
-#include <limits>
 #include <type_traits>
 #include <utility>
 
 namespace ecpp {
 
-/// @brief Stores bitmask value and its properties
+/// Stores bitmask value and its properties.
 template <std::unsigned_integral T> struct bitmask {
   using value_type = std::remove_cv_t<T>;
 
@@ -17,47 +16,42 @@ template <std::unsigned_integral T> struct bitmask {
 
   /**
    * Returns number of trailing zeros in bitmask value (counting from LSB)
+   *
    * @return Number of trailing zeros
    */
   [[nodiscard]] constexpr int trailing_zeros() const noexcept { return std::countr_zero(m_value); }
 
   /**
    * Returns number of leading zeros in bitmask value (counting from MSB)
-   * @return Number of leading zeros or 0 when value is 0
+   *
+   * @return Number of leading zeros
    */
-  [[nodiscard]] constexpr int leading_zeros() const noexcept {
-    if(std::cmp_equal(m_value, 0U)) [[unlikely]] {
-      return 0;
-    }
-    return std::countl_zero(m_value);
-  }
+  [[nodiscard]] constexpr int leading_zeros() const noexcept { return std::countl_zero(m_value); }
 
   /**
    * Returns number of bits set in bitmask value
+   *
    * @return Number of bits set
    */
   [[nodiscard]] constexpr int popcount() const noexcept { return std::popcount(m_value); }
 
   /**
-   * Returns width of bitmask value, i.e. distance between first and last set
-   * bit
+   * Returns width of bitmask value, i.e. distance between first and last set bit
+   *
    * @return Width of bitmask
    */
-  [[nodiscard]] constexpr int width() const noexcept {
-    if(std::cmp_equal(m_value, 0U)) [[unlikely]] {
-      return 0;
-    }
-    return std::numeric_limits<value_type>::digits - (trailing_zeros() + leading_zeros());
-  }
+  [[nodiscard]] constexpr int width() const noexcept { return std::bit_width(base_value()); }
 
   /**
    * Returns value of bitmask
+   *
    * @return value of bitmask
    */
   [[nodiscard]] constexpr value_type value() const noexcept { return m_value; }
 
   /**
    * Returns base value of bitmask, i.e. value with all trailing zeros removed
+   *
    * @return Base value of bitmask
    */
   [[nodiscard]] constexpr value_type base_value() const noexcept {
@@ -107,9 +101,6 @@ template <typename T, typename U>
  * @return true if bitmask is contiguous, false otherwise
  */
 template <typename T> [[nodiscard]] constexpr bool is_contiguous(bitmask<T> const &a) noexcept {
-  if(std::cmp_equal(a.value(), 0U)) [[unlikely]] {
-    return false;
-  }
   return a.width() == a.popcount();
 }
 
