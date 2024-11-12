@@ -7,7 +7,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_executable(ecpp_bitfield_ut src/bitfield_view_construction.cpp src/bitmask.cpp)
-
+target_compile_features(ecpp_bitfield_ut PRIVATE cxx_std_23)
 target_include_directories(ecpp_bitfield_ut PUBLIC include)
 target_link_libraries(ecpp_bitfield_ut ecpp_bitfield GTest::gtest_main)
 target_compile_options(ecpp_bitfield_ut PUBLIC -pthread)

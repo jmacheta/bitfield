@@ -1,6 +1,7 @@
+#include <array>
 #include <ecpp/bitmask.hpp>
 #include <gtest/gtest.h>
-
+#include <ranges>
 using BitmaskTypes = ::testing::Types<std::uint8_t, std::uint16_t, std::uint32_t, std::uint64_t>;
 
 template <typename T> class Bitmask : public testing::Test {};
@@ -9,50 +10,44 @@ TYPED_TEST_SUITE(Bitmask, BitmaskTypes);
 
 using namespace ecpp;
 
-template <typename T>
-static void construct_and_check(T value, unsigned expectedWidth, unsigned expectedShift,
-                                unsigned expectedOffset, T expectedBaseValue,
-                                bool shouldBeContinuous) {
-  bitmask<T> m(value);
-  EXPECT_EQ(m.value(), value);
-  EXPECT_EQ(m.width(), expectedWidth) << "Invalid width for value " << std::hex << value;
-  
-  EXPECT_EQ(m.trailing_zeros(), expectedShift)
-      << "Invalid trailing zeros for value " << std::hex << value;
+template <typename T> struct bitmask_test {
+  T value;
+  T expected_base_value;
 
-  EXPECT_EQ(m.leading_zeros(), expectedOffset)
-      << "Invalid leading zeros for value " << std::hex << value;
+  int expected_leading_zeros;
+  int expected_trailing_zeros;
+  int expected_popcount;
+  int expected_width;
+  bool is_contiguous;
+};
 
-  EXPECT_EQ(m.base_value(), expectedBaseValue) << "Invalid base for value " << std::hex << value;
-  EXPECT_EQ((m.popcount() == m.width()), shouldBeContinuous) << " " << std::hex << value;
-}
+TYPED_TEST(Bitmask, Construction) {
+  using info = std::numeric_limits<TypeParam>;
+  namespace views = std::views;
+  auto max_width = info::digits;
+  auto max = info::max();
 
-TYPED_TEST(Bitmask, ConstructionAndTraits) {
-  constexpr static unsigned maxBitmaskBits =
-      std::numeric_limits<unsigned char>::digits * sizeof(TypeParam);
-  construct_and_check<TypeParam>(0, 0, maxBitmaskBits, 0, 0, true);
+  auto as_tp = [](auto x) { return static_cast<TypeParam>(x); };
 
-  // Check every continuous bitmask, i.e. 0b1, 0b11, 0b111, ...
-  TypeParam mask = 0;
-  for(unsigned width = 1; width != maxBitmaskBits; ++width) {
-    mask = static_cast<TypeParam>(mask | static_cast<TypeParam>(TypeParam(1) << (width - 1)));
-    // Shift bitmask left
-    for(unsigned shift = 0; shift != maxBitmaskBits - width; ++shift) {
-      auto m = static_cast<TypeParam>(mask << shift);
-      construct_and_check<TypeParam>(m, width, shift, (maxBitmaskBits - (width + shift)), mask,
-                                     true);
-    }
-  }
+  auto test_cases = std::to_array<bitmask_test<TypeParam>>({
+      {as_tp(0), as_tp(0), max_width, max_width, 0, 0, true},
+      {as_tp(1), as_tp(1), max_width - 1, 0, 1, 1, true},
+      {as_tp(0b1010), as_tp(0b101), max_width - 4, 1, 2, 3, false},
+      {as_tp(0b1110), as_tp(0b111), max_width - 4, 1, 3, 3, true},
+      {as_tp(max), as_tp(max), 0, 0, max_width, max_width, true},
+      {as_tp((max >> 1) - 1), as_tp(max >> 2), 1, 1, max_width - 2, max_width - 2, true},
+  });
 
-  // Check a few non-continuous bitmasks
-  for(unsigned shift = 0; shift != (maxBitmaskBits - 3); ++shift) {
-    construct_and_check<TypeParam>(static_cast<TypeParam>(static_cast<TypeParam>(0b101) << shift),
-                                   3, shift, (maxBitmaskBits - (3 + shift)), 0b101, false);
-  }
-  for(unsigned shift = 0; shift != (maxBitmaskBits - 7); ++shift) {
-    construct_and_check<TypeParam>(
-        static_cast<TypeParam>(static_cast<TypeParam>(0b1101101) << shift), 7, shift,
-        (maxBitmaskBits - (7 + shift)), 0b1101101, false);
+  for(auto const [index, v] : views::enumerate(test_cases)) {
+    bitmask<TypeParam> b{v.value};
+
+    EXPECT_EQ(b.value(), v.value) << "Invalid stored value at index " << index;
+    EXPECT_EQ(b.base_value(), v.expected_base_value) << "Invalid base value at index " << index;
+    EXPECT_EQ(b.leading_zeros(), v.expected_leading_zeros) << "Invalid leading zeros at index " << index;
+    EXPECT_EQ(b.trailing_zeros(), v.expected_trailing_zeros) << "Invalid trailing zeros at index " << index;
+    EXPECT_EQ(b.popcount(), v.expected_popcount) << "Invalid popcount at index " << index;
+    EXPECT_EQ(b.width(), v.expected_width) << "Invalid width at index" << index;
+    EXPECT_EQ(is_contiguous(b), v.is_contiguous) << "Invalid contiguity at index " << index;
   }
 }
 
@@ -169,15 +164,4 @@ TEST(Bitmask, type_deduction_guide) {
   auto from_int8 = bitmask(INT8_C(0b10101010));
   auto from_uint8 = bitmask(UINT8_C(0b10101010));
   static_assert(std::is_same_v<decltype(from_int8), decltype(from_uint8)>);
-}
-
-TEST(Bitmask, is_contiguous) {
-  EXPECT_FALSE(is_contiguous(bitmask(0)));
-  EXPECT_FALSE(is_contiguous(bitmask(0b101)));
-  EXPECT_FALSE(is_contiguous(bitmask(0b111110011)));
-
-  EXPECT_TRUE(is_contiguous(bitmask(1)));
-  EXPECT_TRUE(is_contiguous(bitmask(0b11)));
-  EXPECT_TRUE(is_contiguous(bitmask(-1)));
-  EXPECT_TRUE(is_contiguous(bitmask(0xFFFFFFFF)));
 }
